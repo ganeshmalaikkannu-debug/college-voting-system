@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Voting System - Campus Democracy Portal</title>
+    <meta name="description" content="Secure, audit-compliant academic voting system built with Spring Boot, Spring Security, and file-based H2 database.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+
+    <!-- Top Navigation Bar -->
+    <header class="glass-nav sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                    <i class="fa-solid fa-check-to-slot text-lg"></i>
+                </div>
+                <div>
+                    <span class="font-extrabold text-lg text-slate-900 brand-font tracking-tight">Apex Institute</span>
+                    <span class="hidden sm:inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 ml-2 border border-indigo-100">Voting Portal</span>
+                </div>
+            </div>
+
+            <!-- Nav Actions / User Status -->
+            <div class="flex items-center gap-3">
+                <button id="nav-voter-link" onclick="window.switchView('dashboard-view'); Elections.loadElections();" class="hidden text-sm font-semibold text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-square-poll-vertical mr-1"></i> Elections
+                </button>
+
+                <button id="nav-admin-link" onclick="window.switchView('admin-view'); Admin.loadAdminData();" class="hidden text-sm font-semibold text-amber-700 hover:text-amber-800 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 transition">
+                    <i class="fa-solid fa-shield-halved mr-1"></i> Admin Portal
+                </button>
+
+                <!-- Authenticated User Badge -->
+                <div id="nav-auth-badge" class="hidden flex items-center gap-2 pl-2 border-l border-slate-200">
+                    <div class="text-right hidden sm:block">
+                        <div id="nav-user-name" class="text-xs font-bold text-slate-900">User</div>
+                        <span id="nav-user-role" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">Role</span>
+                    </div>
+                    <button id="nav-logout-btn" title="Sign Out" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 flex items-center justify-center transition">
+                        <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Unauthenticated Sign In Button -->
+                <div id="nav-unauth-badge">
+                    <button onclick="window.switchView('auth-view')" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700 px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition">
+                        <i class="fa-solid fa-lock mr-1.5"></i> Sign In
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area with Dynamic Views -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- VIEW 1: AUTH VIEW (Login / Register) -->
+        <section id="auth-view" class="app-view active">
+            <div class="max-w-md mx-auto pt-4 pb-12">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-500 mx-auto flex items-center justify-center text-white text-2xl shadow-lg shadow-indigo-200 mb-4">
+                        <i class="fa-solid fa-landmark-dome"></i>
+                    </div>
+                    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Campus Democracy Portal</h1>
+                    <p class="text-sm text-slate-500 mt-2">Log in with your college credentials to participate in institutional voting.</p>
+                </div>
+
+                <!-- Quick Demo Fillers -->
+                <div class="mb-6 p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-1.5 mb-2.5">
+                        <i class="fa-solid fa-bolt"></i> Quick Demo Logins:
+                    </span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btn-quick-voter" class="text-xs font-semibold py-2 px-3 rounded-xl bg-white text-indigo-700 hover:bg-indigo-600 hover:text-white border border-indigo-200 shadow-sm transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-user-graduate"></i> Demo Voter
+                        </button>
+                        <button type="button" id="btn-quick-admin" class="text-xs font-semibold py-2 px-3 rounded-xl bg-white text-amber-700 hover:bg-amber-600 hover:text-white border border-amber-200 shadow-sm transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-user-shield"></i> Demo Admin
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card Form -->
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-100 border border-slate-200">
+                    <!-- Tabs -->
+                    <div class="flex p-1 rounded-xl bg-slate-100 mb-6">
+                        <button id="tab-login" class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white shadow-sm text-indigo-600 transition">
+                            Sign In
+                        </button>
+                        <button id="tab-register" class="flex-1 py-2.5 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition">
+                            Register Voter
+                        </button>
+                    </div>
+
+                    <!-- LOGIN FORM -->
+                    <div id="form-login-container">
+                        <form id="login-form" class="space-y-4">
+                            <div>
+                                <label for="login-roll" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Roll Number</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-solid fa-id-badge text-sm"></i>
+                                    </span>
+                                    <input type="text" id="login-roll" placeholder="e.g. 24CS001" required
+                                           class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium transition">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="login-password" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Password</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-solid fa-key text-sm"></i>
+                                    </span>
+                                    <input type="password" id="login-password" placeholder="••••••••" required
+                                           class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm transition">
+                                </div>
+                            </div>
+
+                            <button type="submit" id="login-submit-btn" class="w-full mt-2 py-3 px-4 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 transition">
+                                Sign In to Portal <i class="fa-solid fa-arrow-right ml-1"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- REGISTER FORM -->
+                    <div id="form-register-container" class="hidden">
+                        <form id="register-form" class="space-y-4">
+                            <div>
+                                <label for="reg-roll" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">College Roll Number</label>
+                                <input type="text" id="reg-roll" placeholder="e.g. 24CS099" required
+                                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition">
+                            </div>
+
+                            <div>
+                                <label for="reg-name" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Full Name</label>
+                                <input type="text" id="reg-name" placeholder="e.g. Rahul Sharma" required
+                                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition">
+                            </div>
+
+                            <div>
+                                <label for="reg-email" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Institutional Email</label>
+                                <input type="email" id="reg-email" placeholder="e.g. rahul@college.edu" required
+                                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition">
+                            </div>
+
+                            <div>
+                                <label for="reg-password" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Create Password</label>
+                                <input type="password" id="reg-password" placeholder="At least 6 characters" minlength="6" required
+                                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition">
+                            </div>
+
+                            <button type="submit" id="reg-submit-btn" class="w-full mt-2 py-3 px-4 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 transition">
+                                Complete Voter Registration <i class="fa-solid fa-id-card ml-1"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: VOTER DASHBOARD -->
+        <section id="dashboard-view" class="app-view">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Elections Directory</h2>
+                    <p class="text-sm text-slate-500 mt-1">Explore ongoing, upcoming, and archived campus elections.</p>
+                </div>
+
+                <!-- Filters & Refresh -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex p-1 rounded-xl bg-slate-200/80 border border-slate-200">
+                        <button data-filter="ALL" class="election-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-sm transition">All</button>
+                        <button data-filter="ACTIVE" class="election-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Active</button>
+                        <button data-filter="UPCOMING" class="election-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Upcoming</button>
+                        <button data-filter="CLOSED" class="election-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Closed</button>
+                    </div>
+
+                    <button id="refresh-elections-btn" title="Refresh" class="p-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 transition">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Elections Grid -->
+            <div id="elections-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically populated by elections.js -->
+            </div>
+        </section>
+
+        <!-- VIEW 3: CANDIDATE & BALLOT VIEW -->
+        <section id="ballot-view" class="app-view">
+            <div class="mb-6">
+                <button id="btn-back-dashboard" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 mb-4 transition">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Elections
+                </button>
+
+                <div class="glass-panel p-6 rounded-3xl border border-slate-200 mb-8">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span id="ballot-election-badge" class="px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">STATUS</span>
+                    </div>
+                    <h2 id="ballot-election-title" class="text-3xl font-extrabold text-slate-900 tracking-tight">Election Title</h2>
+                    <p id="ballot-election-desc" class="text-sm text-slate-600 mt-2 max-w-3xl leading-relaxed">Election description</p>
+                </div>
+
+                <div class="mb-4 flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-slate-900">Nominated Candidates</h3>
+                    <span class="text-xs text-slate-500 font-medium">Select exactly one nominee to cast your vote</span>
+                </div>
+
+                <!-- Candidates Grid -->
+                <div id="ballot-candidates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Populated by ballot.js -->
+                </div>
+
+                <!-- Bottom Action Bar -->
+                <div id="ballot-action-bar" class="flex justify-end pt-4 border-t border-slate-200">
+                    <!-- Populated by ballot.js -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: NEUTRAL VOTE SUCCESS SCREEN -->
+        <section id="vote-success-view" class="app-view">
+            <div class="max-w-xl mx-auto py-12 text-center">
+                <div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center text-4xl mb-6 badge-active-pulse">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+
+                <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Ballot Recorded Successfully</h2>
+                <p class="text-sm text-slate-500 mt-2">Your participation has been verified and your vote cast into the digital ballot box.</p>
+
+                <!-- Receipt Box -->
+                <div class="glass-panel rounded-3xl p-6 mt-8 border border-slate-200 text-left space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span class="text-xs font-semibold uppercase text-slate-400">Election</span>
+                        <span id="success-election-title" class="text-sm font-bold text-slate-800">Student Council 2026</span>
+                    </div>
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span class="text-xs font-semibold uppercase text-slate-400">Timestamp</span>
+                        <span id="success-cast-time" class="text-sm font-medium text-slate-700">Oct 20, 2026</span>
+                    </div>
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span class="text-xs font-semibold uppercase text-slate-400">Verification Token</span>
+                        <span id="success-receipt-hash" class="text-xs font-mono font-bold text-indigo-600">BLT-7X9F-2026</span>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 text-xs text-slate-600 flex items-start gap-2.5">
+                        <i class="fa-solid fa-lock text-indigo-500 mt-0.5"></i>
+                        <span><strong>Ballot Privacy Guarantee:</strong> In accordance with constitutional election standards, your candidate selection has been severed from your student identity. It is impossible to query who you voted for.</span>
+                    </div>
+                </div>
+
+                <button id="btn-success-dashboard" class="mt-8 py-3 px-8 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition">
+                    Return to Elections Directory
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW 5: RESULTS VIEW -->
+        <section id="results-view" class="app-view">
+            <div class="max-w-3xl mx-auto">
+                <button id="btn-results-dashboard" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 mb-4 transition">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+                </button>
+
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-200 mb-8">
+                    <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+                        <span id="results-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Official Certified Results</span>
+                        <span id="results-total-votes" class="text-sm font-bold text-slate-700">0 Total Votes</span>
+                    </div>
+                    <h2 id="results-election-title" class="text-3xl font-extrabold text-slate-900 tracking-tight">Election Results</h2>
+                    <p class="text-sm text-slate-500 mt-1">Aggregated vote counts calculated directly from immutable digital ballots.</p>
+                </div>
+
+                <!-- Candidate Results Standings -->
+                <div id="results-candidates-list" class="space-y-4">
+                    <!-- Populated by ballot.js -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 6: ADMIN PORTAL -->
+        <section id="admin-view" class="app-view">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Election Management Console</h2>
+                    <p class="text-sm text-slate-500 mt-1">Create elections, transition lifecycles, manage candidates, and certify outcomes.</p>
+                </div>
+
+                <button id="btn-open-create-election" class="py-2.5 px-5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Create Election
+                </button>
+            </div>
+
+            <!-- Elections Table Card -->
+            <div class="glass-panel rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50/80 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                            <tr>
+                                <th class="py-3.5 px-4">Election Details</th>
+                                <th class="py-3.5 px-3">Status</th>
+                                <th class="py-3.5 px-3">Candidates</th>
+                                <th class="py-3.5 px-3">Results</th>
+                                <th class="py-3.5 px-3">Action</th>
+                                <th class="py-3.5 px-4 text-right">Metrics & Options</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-elections-tbody">
+                            <!-- Populated by admin.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODALS -->
+
+    <!-- Modal 1: Vote Confirmation Modal -->
+    <div id="modal-vote-confirm" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-check-to-slot"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Confirm Your Ballot</h3>
+            <p class="text-sm text-slate-600 mt-2 leading-relaxed">
+                You are about to cast your vote for <strong id="confirm-candidate-name" class="text-indigo-600">Candidate</strong> in <span id="confirm-election-name" class="font-medium text-slate-800">Election</span>.
+            </p>
+            <div class="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-100 text-xs text-amber-800 flex items-start gap-2">
+                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                <span>This choice is final. You cannot modify or recall your ballot after submission.</span>
+            </div>
+            <div class="mt-6 flex items-center justify-end gap-3">
+                <button type="button" id="btn-cancel-vote" class="py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">Cancel</button>
+                <button type="button" id="btn-confirm-vote" class="py-2.5 px-5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 transition">Yes, Confirm & Cast Ballot</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Candidate Manifesto Modal -->
+    <div id="modal-manifesto" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <div>
+                    <h3 id="manifesto-candidate-name" class="text-xl font-bold text-slate-900">Candidate Name</h3>
+                    <p id="manifesto-candidate-dept" class="text-xs text-indigo-600 font-semibold mt-0.5">Department</p>
+                </div>
+                <button onclick="document.getElementById('modal-manifesto').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="overflow-y-auto flex-1 pr-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Complete Candidate Manifesto</span>
+                <p id="manifesto-full-text" class="text-sm text-slate-700 mt-2 leading-relaxed whitespace-pre-line"></p>
+            </div>
+            <div class="pt-4 border-t border-slate-100 flex justify-end">
+                <button onclick="document.getElementById('modal-manifesto').classList.add('hidden')" class="py-2 px-5 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Create/Edit Election Modal -->
+    <div id="modal-election" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <h3 id="modal-election-title" class="text-xl font-bold text-slate-900">Create New Election</h3>
+                <button onclick="document.getElementById('modal-election').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="form-election" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Title</label>
+                    <input type="text" id="election-title-input" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Description</label>
+                    <textarea id="election-desc-input" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Start Date & Time</label>
+                        <input type="datetime-local" id="election-start-time" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">End Date & Time</label>
+                        <input type="datetime-local" id="election-end-time" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('modal-election').classList.add('hidden')" class="py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                    <button type="submit" class="py-2.5 px-5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white">Save Election</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Manage Candidates Modal -->
+    <div id="modal-manage-candidates" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                <h3 class="text-xl font-bold text-slate-900">Manage Candidate Nominations</h3>
+                <button onclick="document.getElementById('modal-manage-candidates').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Existing Candidate List -->
+            <div class="mb-6 flex-1 overflow-y-auto">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Current Nominees</h4>
+                <div id="admin-candidates-list" class="space-y-2"></div>
+            </div>
+
+            <!-- Add Candidate Form -->
+            <div class="pt-4 border-t border-slate-100">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">Nominate New Candidate</h4>
+                <form id="form-candidate" class="space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <input type="text" id="cand-name-input" placeholder="Candidate Name" required class="px-3 py-2 rounded-xl border text-sm">
+                        <input type="text" id="cand-dept-input" placeholder="Department (e.g. CSE)" class="px-3 py-2 rounded-xl border text-sm">
+                        <input type="text" id="cand-pos-input" placeholder="Position (e.g. President)" class="px-3 py-2 rounded-xl border text-sm">
+                    </div>
+                    <textarea id="cand-manifesto-input" placeholder="Campaign Manifesto & Commitments" required rows="2" class="w-full px-3 py-2 rounded-xl border text-sm"></textarea>
+                    <div class="flex justify-end">
+                        <button type="submit" class="py-2 px-4 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white">
+                            <i class="fa-solid fa-plus mr-1"></i> Add Candidate
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: Participation Turnout Modal -->
+    <div id="modal-participation" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center text-2xl mb-4">
+                <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Voter Turnout Metrics</h3>
+            <p id="part-election-title" class="text-xs font-semibold text-slate-500 mt-1">Election Title</p>
+
+            <div class="mt-6 p-6 rounded-2xl bg-indigo-50/50 border border-indigo-100">
+                <div id="part-turnout-pct" class="text-4xl font-extrabold text-indigo-600">0%</div>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-1 block">Campus Participation Rate</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="p-3.5 rounded-xl bg-slate-50 border text-left">
+                    <span class="text-xs text-slate-400 font-medium">Votes Cast</span>
+                    <div id="part-votes-cast" class="text-xl font-bold text-slate-800">0</div>
+                </div>
+                <div class="p-3.5 rounded-xl bg-slate-50 border text-left">
+                    <span class="text-xs text-slate-400 font-medium">Eligible Voters</span>
+                    <div id="part-total-voters" class="text-xl font-bold text-slate-800">0</div>
+                </div>
+            </div>
+
+            <div class="mt-4 p-3 rounded-xl bg-slate-100 text-xs text-slate-500 text-left">
+                <i class="fa-solid fa-shield-halved text-indigo-600 mr-1"></i>
+                Turnout counts are aggregated anonymously. No student-to-candidate link is recorded.
+            </div>
+
+            <div class="mt-6">
+                <button onclick="document.getElementById('modal-participation').classList.add('hidden')" class="w-full py-2.5 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-900 text-white">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/elections.js"></script>
+    <script src="js/ballot.js"></script>
+    <script src="js/admin.js"></script>
+
+    <script>
+        // Global Simple View Switcher
+        window.switchView = function(viewId) {
+            document.querySelectorAll('.app-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            const target = document.getElementById(viewId);
+            if (target) {
+                target.classList.add('active');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        };
+
+        // Initialize application on DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            Auth.init();
+            Elections.init();
+            Ballot.init();
+            Admin.init();
+        });
+    </script>
+</body>
+</html>
