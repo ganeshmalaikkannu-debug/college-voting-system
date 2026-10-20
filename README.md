@@ -91,9 +91,9 @@ The development profile (`dev`) automatically seeds initial institutional accoun
 | Role | Roll Number | Password | Capabilities |
 |---|---|---|---|
 | **Admin** | `ADM001` | `AdminSecure@123` | Create elections, nominate candidates, audit turnout, close elections, publish results |
-| **Demo Voter 1** | `24CS001` | `VoterSecure@123` | View active elections, view candidate manifestos, cast ballot |
-| **Demo Voter 2** | `24CS002` | `VoterSecure@123` | Alternate voter account |
-| **Demo Voter 3** | `24CS003` | `VoterSecure@123` | Alternate voter account |
+| **Demo Voter 1** | `24CS001` | `Student@123` | View active elections, view candidate manifestos, cast ballot |
+| **Demo Voter 2** | `24CS002` | `Student@123` | Alternate voter account |
+| **Demo Voter 3** | `24CS003` | `Student@123` | Alternate voter account |
 
 *(Tip: The login screen has quick one-click demo login buttons for immediate convenience).*
 
