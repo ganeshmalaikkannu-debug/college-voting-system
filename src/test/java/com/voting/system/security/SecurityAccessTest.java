@@ -55,6 +55,12 @@ class SecurityAccessTest {
     private CandidateRepository candidateRepository;
 
     @Autowired
+    private com.voting.system.repository.BallotRepository ballotRepository;
+
+    @Autowired
+    private com.voting.system.repository.VoterParticipationRepository voterParticipationRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private String adminToken;
@@ -63,6 +69,8 @@ class SecurityAccessTest {
 
     @BeforeEach
     void setUp() {
+        ballotRepository.deleteAll();
+        voterParticipationRepository.deleteAll();
         candidateRepository.deleteAll();
         electionRepository.deleteAll();
         userRepository.deleteAll();
