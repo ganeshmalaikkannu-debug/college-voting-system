@@ -4,14 +4,18 @@ import com.voting.system.dto.AuthResponse;
 import com.voting.system.dto.LoginRequest;
 import com.voting.system.dto.RegisterRequest;
 import com.voting.system.dto.UserProfileResponse;
-import com.voting.system.exception.ResourceNotFoundException;
 import com.voting.system.model.User;
+import com.voting.system.security.JwtTokenProvider;
 import com.voting.system.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -21,20 +25,24 @@ import java.security.Principal;
  * 
  * Simple-English Explanation:
  * Handles incoming HTTP requests for:
- * - Registering new student voters
- * - Logging in with roll number and password
- * - Fetching the authenticated profile
+ * - Registering new student voters (forces Role.VOTER)
+ * - Authenticating users via AuthenticationManager and issuing signed JWTs
+ * - Fetching the authenticated profile via /api/auth/me
  */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider tokenProvider;
 
-    public AuthController(UserService userService, PasswordEncoder passwordEncoder) {
+    public AuthController(UserService userService,
+                          AuthenticationManager authenticationManager,
+                          JwtTokenProvider tokenProvider) {
         this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.tokenProvider = tokenProvider;
     }
 
     @PostMapping("/register")
@@ -54,21 +62,22 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        User user;
+        String cleanRoll = request.getRollNumber().trim().toUpperCase();
+
         try {
-            user = userService.findByRollNumber(request.getRollNumber());
-        } catch (ResourceNotFoundException ex) {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(cleanRoll, request.getPassword())
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (AuthenticationException ex) {
             throw new BadCredentialsException("Invalid roll number or password");
         }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Invalid roll number or password");
-        }
+        User user = userService.findByRollNumber(cleanRoll);
+        String jwt = tokenProvider.generateToken(user.getRollNumber(), user.getRole().name(), user.getName());
 
-        // Return authentication response
-        // Note: Full cryptographic JWT signing is integrated in Phase 4 SecurityConfig
         AuthResponse response = new AuthResponse(
-                "token_" + user.getRollNumber() + "_" + System.currentTimeMillis(),
+                jwt,
                 user.getId(),
                 user.getRollNumber(),
                 user.getName(),

@@ -33,7 +33,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * MockMvc tests for CandidateController and VoteController.
  */
-@WebMvcTest({CandidateController.class, VoteController.class})
+@WebMvcTest(controllers = {CandidateController.class, VoteController.class}, excludeAutoConfiguration = {
+        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration.class
+})
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
 class CandidateAndVoteControllerTest {

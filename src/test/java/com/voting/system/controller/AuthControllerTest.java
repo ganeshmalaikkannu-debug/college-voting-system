@@ -17,7 +17,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.voting.system.security.JwtTokenProvider;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.security.Principal;
@@ -33,7 +35,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * MockMvc tests for AuthController.
  */
-@WebMvcTest(AuthController.class)
+@WebMvcTest(controllers = AuthController.class, excludeAutoConfiguration = {
+        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration.class
+})
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
 class AuthControllerTest {
@@ -48,7 +53,10 @@ class AuthControllerTest {
     private UserService userService;
 
     @MockBean
-    private PasswordEncoder passwordEncoder;
+    private AuthenticationManager authenticationManager;
+
+    @MockBean
+    private JwtTokenProvider jwtTokenProvider;
 
     @Test
     @DisplayName("POST /api/auth/register returns 201 for valid voter registration")
@@ -102,14 +110,15 @@ class AuthControllerTest {
         User user = new User("ROLL001", "Bob", "bob@college.edu", "encoded_hash", Role.VOTER);
         user.setId(10L);
 
+        when(authenticationManager.authenticate(any())).thenReturn(null);
         when(userService.findByRollNumber("ROLL001")).thenReturn(user);
-        when(passwordEncoder.matches("secret123", "encoded_hash")).thenReturn(true);
+        when(jwtTokenProvider.generateToken("ROLL001", "VOTER", "Bob")).thenReturn("signed_jwt_token");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.token").value("signed_jwt_token"))
                 .andExpect(jsonPath("$.rollNumber").value("ROLL001"));
     }
 
@@ -117,10 +126,9 @@ class AuthControllerTest {
     @DisplayName("POST /api/auth/login returns 401 for wrong password")
     void login_WrongPassword_Returns401() throws Exception {
         LoginRequest request = new LoginRequest("ROLL001", "wrong_pass");
-        User user = new User("ROLL001", "Bob", "bob@college.edu", "encoded_hash", Role.VOTER);
 
-        when(userService.findByRollNumber("ROLL001")).thenReturn(user);
-        when(passwordEncoder.matches("wrong_pass", "encoded_hash")).thenReturn(false);
+        when(authenticationManager.authenticate(any()))
+                .thenThrow(new org.springframework.security.authentication.BadCredentialsException("Invalid roll number or password"));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
